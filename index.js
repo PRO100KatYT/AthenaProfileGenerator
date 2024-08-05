@@ -22,6 +22,8 @@ request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
         if (mode == "lego") continue; // Adding lego characters to the profile is unnecessary
 
         data[mode].forEach(item => {
+            if (!item.hasOwnProperty("type")) return;
+
             if (item.id.toLowerCase().includes("random")) return;
 
             if (mode == "tracks") item.type = {"backendValue": "SparksSong"};
@@ -33,13 +35,18 @@ request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
             let variants = [];
 
             if (item.variants) {
-                item.variants.forEach(obj => {
+                for (var obj in item.variants) {
+                    obj = item.variants[obj];
+
+                    if (obj.channel.toLowerCase() == "pettemperament")
+                        continue;
+
                     variants.push({
                         "channel": obj.channel || "",
                         "active": obj.options[0].tag || "",
                         "owned": obj.options.map(variant => variant.tag || "")
                     })
-                })
+                }
             }
 
             athena.items[id] = {
