@@ -35,18 +35,15 @@ request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
             let variants = [];
 
             if (item.variants) {
-                for (var obj in item.variants) {
-                    obj = item.variants[obj];
-
-                    if (obj.channel.toLowerCase() == "pettemperament")
-                        continue;
-
+                item.variants.forEach(obj => {
+                    if (obj.channel.toLowerCase() == "pettemperament") return;
+                    
                     variants.push({
                         "channel": obj.channel || "",
                         "active": obj.options[0].tag || "",
                         "owned": obj.options.map(variant => variant.tag || "")
                     })
-                }
+                })
             }
 
             athena.items[id] = {
