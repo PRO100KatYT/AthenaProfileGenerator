@@ -22,11 +22,11 @@ request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
         if (mode == "lego") continue; // Adding lego characters to the profile is unnecessary
 
         data[mode].forEach(item => {
+            if (mode == "tracks") item.type = {"backendValue": "SparksSong"};
+
             if (!item.hasOwnProperty("type")) return;
 
             if (item.id.toLowerCase().includes("random")) return;
-
-            if (mode == "tracks") item.type = {"backendValue": "SparksSong"};
 
             // Credits to PRO100KatYT for backendValue fixes
             if (fixedBackendValues.hasOwnProperty(item.type.backendValue)) item.type.backendValue = fixedBackendValues[item.type.backendValue];
