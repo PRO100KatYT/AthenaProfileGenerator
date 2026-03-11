@@ -1,5 +1,6 @@
 const { default: request } = require("axios");
 const fs = require("fs");
+const uuid = require("uuid");
 let athena = require("./athena_template.json");
 
 const fixedBackendValues = {
@@ -9,8 +10,12 @@ const fixedBackendValues = {
     "AthenaPetCarrier": "AthenaBackpack",
     "AthenaPet": "AthenaBackpack",
     "SparksDrum": "SparksDrums",
-    "SparksMic": "SparksMicrophone"
+    "SparksMic": "SparksMicrophone",
+    "CosmeticCompanion": "CosmeticMimosa"
 }
+const cosmeticTypesToHaveUUID = [
+    "CosmeticMimosa"
+]
 
 console.log("Fortnite Athena Profile Generator by Lawin v1.0.3\n");
 request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
@@ -32,6 +37,11 @@ request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
             if (fixedBackendValues.hasOwnProperty(item.type.backendValue)) item.type.backendValue = fixedBackendValues[item.type.backendValue];
 
             let id = `${item.type.backendValue}:${item.id}`;
+            let guid = uuid.v4();
+            if (!cosmeticTypesToHaveUUID.includes(item.type.backendValue)) {
+                guid = id;
+            }
+
             let variants = [];
 
             if (item.variants) {
@@ -46,7 +56,7 @@ request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
                 })
             }
 
-            athena.items[id] = {
+            athena.items[guid] = {
                 "templateId": id,
                 "attributes": {
                     "max_level_bonus": 0,
