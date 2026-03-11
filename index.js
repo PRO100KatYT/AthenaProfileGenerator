@@ -1,6 +1,7 @@
 const { default: request } = require("axios");
 const fs = require("fs");
 const path = require("path");
+const uuid = require("uuid");
 let athena = require("./athena_template.json");
 
 const fixedBackendValues = {
@@ -10,10 +11,15 @@ const fixedBackendValues = {
     "AthenaPetCarrier": "AthenaBackpack",
     "AthenaPet": "AthenaBackpack",
     "SparksDrum": "SparksDrums",
-    "SparksMic": "SparksMicrophone"
+    "SparksMic": "SparksMicrophone",
+    "CosmeticCompanion": "CosmeticMimosa"
 };
 
-console.log("Fortnite Athena Profile Generator by Lawin v1.0.4\n");
+const cosmeticTypesToHaveUUID = [
+    "CosmeticMimosa"
+];
+
+console.log("Fortnite Athena Profile Generator by Lawin v1.0.5\n");
 request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
     let data = resp.data.data;
 
@@ -23,6 +29,8 @@ request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
         if ((mode == "lego") || (mode == "beans")) continue;
 
         for (let item of data[mode]) {
+            if (!item.hasOwnProperty("type")) continue;
+
             if (item.id.toLowerCase().includes("random")) continue;
 
             if (mode == "tracks") item.type = { "backendValue": "SparksSong" };
@@ -31,10 +39,18 @@ request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
             if (Object.keys(fixedBackendValues).includes(item.type.backendValue)) item.type.backendValue = fixedBackendValues[item.type.backendValue];
 
             let id = `${item.type.backendValue}:${item.id}`;
+            let guid = uuid.v4();
+            
+            if (!cosmeticTypesToHaveUUID.includes(item.type.backendValue)) {
+                guid = id;
+            }
+
             let variants = [];
 
             if (item.variants) {
                 for (let obj of item.variants) {
+                    if (obj.channel && obj.channel.toLowerCase() == "pettemperament") continue;
+
                     variants.push({
                         channel: (obj.channel) || "",
                         active: (obj.options?.[0]?.tag) || "",
@@ -43,7 +59,7 @@ request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
                 }
             }
 
-            athena.items[id] = {
+            athena.items[guid] = {
                 templateId: id,
                 attributes: {
                     max_level_bonus: 0,
