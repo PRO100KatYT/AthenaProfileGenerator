@@ -1,5 +1,6 @@
 const { default: request } = require("axios");
 const fs = require("fs");
+const path = require("path");
 const uuid = require("uuid");
 let athena = require("./athena_template.json");
 
@@ -12,32 +13,34 @@ const fixedBackendValues = {
     "SparksDrum": "SparksDrums",
     "SparksMic": "SparksMicrophone",
     "CosmeticCompanion": "CosmeticMimosa"
-}
+};
+
 const cosmeticTypesToHaveUUID = [
     "CosmeticMimosa"
-]
+];
 
-console.log("Fortnite Athena Profile Generator by Lawin v1.0.3\n");
+console.log("Fortnite Athena Profile Generator by Lawin v1.0.5\n");
 request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
     let data = resp.data.data;
 
-    console.log("[GEN] Starting to generate...\n");
+    console.log("[GEN] Starting to generate...");
 
-    for (var mode in data) {
-        if (mode == "lego") continue; // Adding lego characters to the profile is unnecessary
+    for (let mode of Object.keys(data)) {
+        if ((mode == "lego") || (mode == "beans")) continue;
 
-        data[mode].forEach(item => {
-            if (mode == "tracks") item.type = {"backendValue": "SparksSong"};
+        for (let item of data[mode]) {
+            if (!item.hasOwnProperty("type")) continue;
 
-            if (!item.hasOwnProperty("type")) return;
+            if (item.id.toLowerCase().includes("random")) continue;
 
-            if (item.id.toLowerCase().includes("random")) return;
+            if (mode == "tracks") item.type = { "backendValue": "SparksSong" };
 
             // Credits to PRO100KatYT for backendValue fixes
-            if (fixedBackendValues.hasOwnProperty(item.type.backendValue)) item.type.backendValue = fixedBackendValues[item.type.backendValue];
+            if (Object.keys(fixedBackendValues).includes(item.type.backendValue)) item.type.backendValue = fixedBackendValues[item.type.backendValue];
 
             let id = `${item.type.backendValue}:${item.id}`;
             let guid = uuid.v4();
+            
             if (!cosmeticTypesToHaveUUID.includes(item.type.backendValue)) {
                 guid = id;
             }
@@ -45,50 +48,52 @@ request.get("https://fortnite-api.com/v2/cosmetics").then(resp => {
             let variants = [];
 
             if (item.variants) {
-                item.variants.forEach(obj => {
-                    if (obj.channel.toLowerCase() == "pettemperament") return;
-                    
+                for (let obj of item.variants) {
+                    if (obj.channel && obj.channel.toLowerCase() == "pettemperament") continue;
+
                     variants.push({
-                        "channel": obj.channel || "",
-                        "active": obj.options[0].tag || "",
-                        "owned": obj.options.map(variant => variant.tag || "")
-                    })
-                })
+                        channel: (obj.channel) || "",
+                        active: (obj.options?.[0]?.tag) || "",
+                        owned: (obj.options?.map?.(variant => (variant?.tag || ""))) || ""
+                    });
+                }
             }
 
             athena.items[guid] = {
-                "templateId": id,
-                "attributes": {
-                    "max_level_bonus": 0,
-                    "level": 1,
-                    "item_seen": true,
-                    "xp": 0,
-                    "variants": variants,
-                    "favorite": false
+                templateId: id,
+                attributes: {
+                    max_level_bonus: 0,
+                    level: 1,
+                    item_seen: true,
+                    xp: 0,
+                    variants: variants,
+                    favorite: false
                 },
-                "quantity": 1
-            }
-        })
+                quantity: 1
+            };
+        }
     }
 
-    fs.writeFileSync("./athena.json", JSON.stringify(athena, null, 2));
-    const stats = fs.statSync("./athena.json");
+    const athenaPath = path.join(__dirname, "athena.json");
 
-    console.log("[GEN] Successfully generated and saved into", `${__dirname}\\athena.json`, `(${size(stats.size)})`);
-})
+    fs.writeFileSync(athenaPath, JSON.stringify(athena, null, 2));
+    const stats = fs.statSync(athenaPath);
+
+    console.log(`[GEN] Successfully generated and saved into ${athenaPath} (${size(stats.size)})`);
+});
 
 function size(bytes) {
-    const sizes = ["Bytes", "KB", "MB", "GB", "TB"]
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
 
     if (bytes == 0) {
-        return "N/A"
+        return "N/A";
     }
 
-    const i = Number(Math.floor(Math.log(bytes) / Math.log(1024)))
+    const i = Number(Math.floor(Math.log(bytes) / Math.log(1024)));
 
     if (i == 0) {
-        return bytes + " " + sizes[i]
+        return bytes + " " + sizes[i];
     }
 
-    return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i]
+    return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i];
 }
